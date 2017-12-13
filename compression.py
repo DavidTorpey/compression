@@ -3,7 +3,7 @@ import numpy as np
 import keras.backend as K
 from keras.layers import Conv2D, MaxPooling2D, Input, Deconv2D, UpSampling2D
 from keras.models import Model
-from sklearn.preprocessing import MinMaxScaler
+import sys
 
 def imread(f):
     return cv2.imread(f, 0)
@@ -14,7 +14,8 @@ def resize(im, s):
 def jp2(im):
     return cv2.imencode(".jp2", im)[1]    
 
-im = imread('lena.jpg')
+filename = sys.argv[1]
+im = imread(filename)
 im_ = resize(im, (400, 224))
 im = im_.reshape((1, im_.shape[0], im_.shape[1], 1)) / 255.0
 
@@ -27,10 +28,10 @@ encoded = MaxPooling2D()(encoded)
 encoded = Conv2D(4, (3, 3), activation='relu', padding='same')(encoded)
 
 x1 = UpSampling2D()
-x2 = Conv2D(8, (3, 3), activation='relu', padding='same')
+x2 = Deconv2D(8, (3, 3), activation='relu', padding='same')
 x3 = UpSampling2D()
-x4 = Conv2D(16, (3, 3), activation='relu', padding='same')
-x5 = Conv2D(1, (3, 3), activation='relu', padding='same')
+x4 = Deconv2D(16, (3, 3), activation='relu', padding='same')
+x5 = Deconv2D(1, (3, 3), activation='relu', padding='same')
 
 decoded = x1(encoded)
 decoded = x2(decoded)
@@ -71,5 +72,6 @@ for i, e in enumerate(compressed):
     
 im_decoded = decoder.predict(a) * 255.0
 im_r = im_decoded.reshape((im_decoded.shape[1], im_decoded.shape[2])).astype('uint8')
-cv2.imwrite('reconstructed.jpg', im_r)
+
+cv2.imwrite(filename.split('/')[-1] + '_reconstructed.jpg', im_r)
 decoder.save_weights('weights.h5py')
